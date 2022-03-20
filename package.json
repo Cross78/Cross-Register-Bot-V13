@@ -1,0 +1,28 @@
+{
+    "name": "cross-register",
+    "version": "0.0.1",
+    "description": "Cross Register Bot Altyapısı",
+    "main": "main.js",
+    "scripts": {
+        "start": "node main.js",
+        "test": "nodemon main.js"
+    },
+    "dependencies": {
+        "discord.js": "^13.6.0",
+        "moment": "^2.29.1",
+        "moment-duration-format": "^2.3.2",
+        "mongoose": "^5.12.9",
+        "nodemon": "^2.0.7"
+    },
+    "engines": {
+        "node": "16.x"
+    },
+    "license": "MIT",
+    "keywords": [
+        "node",
+        "glitch",
+        "express",
+        "Cross",
+        "Serendia"
+    ]
+}
