@@ -51,86 +51,27 @@ client.on("messageCreate", async message => {
     }
 }
 })
-
-client.on("ready", async () => {
-  client.guilds.cache.forEach(guild => {
-    guild.invites.fetch().then(invites => guildInvites.set(guild.id, invites)).catch(err => console.log(err));
-  });
-});  
-const guildInvites = new Map()
-client.on("inviteCreate", async invite => {
-   guildInvites.set(invite.guild.id, await invite.guild.invites.fetch())});
-client.on("inviteDelete", invite => setTimeout(async () => { guildInvites.set(invite.guild.id, await invite.guild.invites.fetch()); }, 5000));
-const Database = require('./Models/İnvite.js');
 client.on("guildMemberAdd", async member => {
   if(!member) return;
   if (ayar.guild.tags.some(s => member.user.username.includes(s) || member.user.discriminator.includes(s) || member.user.tag.includes(s))) await member.roles.add(ayar.roles.tagRole).catch(e => {})
-  let cachedInvites = await guildInvites.get(member.guild.id);
-  let newInvites = await member.guild.invites.fetch();
-  let usedInvite = newInvites.find(inv => cachedInvites.get(inv.code).uses < inv.uses) || cachedInvites.find(inv => newInvites.has(inv.code)) || {code: member.guild.vanityURLCode, uses: null, inviter: {id: null}};
-  let inviter = client.users.cache.get(usedInvite.inviterId) || {id: member.guild.id};
-  let isMemberFake = (Date.now() - member.user.createdTimestamp) < 7*24*60*60*1000;
-  Database.findOne({ guildID: member.guild.id, userID: member.id }, (err, joinedMember) => {
-    if (!joinedMember) {
-      let newJoinedMember = new Database({
-          _id: new mongoose.Types.ObjectId(),
-          guildID: member.guild.id,
-          userID: member.id,
-          inviterID: inviter.id,
-          regular: 0,
-          bonus: 0,
-          fake: 0
-      });
-      newJoinedMember.save();
-    } else {
-      joinedMember.inviterID = inviter.id;
-      joinedMember.save();
-    };
-  });
+ let isMemberFake = (Date.now() - member.user.createdTimestamp) < 7*24*60*60*1000;
+  
   if (isMemberFake) {
       let olusturma = `(\`${moment.duration(Date.now() - member.user.createdTimestamp).locale('tr').format('Y [yıl], M [Ay], D [Gün]')}\`)`
       await member.roles.set([ayar.roles.suspecious]).catch(e => {});
 await member.setNickname(ayar.guild.suspeciousName).catch(e => {});
 let channel = client.channels.cache.get(ayar.channels.registerChannel)
-//if(channel) channel.send(`
 
-    Database.findOne({ guildID: member.guild.id, userID: inviter.id }, (err, inviterData) => {
-      if (!inviterData) {
-        let newInviter = new Database({
-          _id: new mongoose.Types.ObjectId(), 
-          guildID: member.guild.id,
-          userID: inviter.id,
-          inviterID: null,
-          regular: 0,
-          bonus: 0,
-          fake: 1
-        });
-        newInviter.save().catch( x => {});
-      } else {
-                 member.roles.set([ayar.roles.suspeciousRole]).catch(e => {});
- member.setNickname(ayar.guild.suspeciousName).catch(e => {});
-
+    
 if(channel) channel.send(`
 ${member}, Adlı kullanıcı sunucuya katıldı fakat hesabı yeni olduğu için şüpheli hesap rolünü verdim. ${olusturma}`);
-        inviterData.fake++
-        inviterData.save().catch(x => {});
-      };
-    });
+  
+      
+    
   } else {
         member.roles.add(ayar.roles.unregisterRoles).catch(e => {});
              member.setNickname(ayar.guild.defaultName).catch(e => {});
-    Database.findOne({ guildID: member.guild.id, userID: inviter.id }, (err, inviterData) => {
-        if (!inviterData) {
-          let newInviter = new Database({
-            _id: new mongoose.Types.ObjectId(),
-            guildID: member.guild.id,
-            userID: inviter.id,
-            inviterID: null,
-            regular: 1,
-            bonus: 0,
-            fake: 0
-          });
-          newInviter.save().then(x => {
+    
            client.channels.cache.get(ayar.channels.registerChannel).send(`
 :tada: Sunucumuz'a hoş geldin ${member}!
                 
@@ -138,55 +79,8 @@ Hesabın ${moment(member.user.createdTimestamp).locale('tr').format('LLL')} tari
 
 Sunucu kurallarımız ${client.channels.cache.get(ayar.channels.rulesChannel)} kanalında belirtilmiştir. Unutma sunucu içerisinde ki ceza işlemlerin kuralları okuduğunu varsayarak gerçekleştirilecek.
 
-${client.users.cache.has(inviter.id) ? inviter : "**Özel URL**"} tarafından davet edilerek Sunucumuzun **${member.guild.memberCount}**. üyesi olmanı sağladı! İyi eğlenceler :tada::tada::tada:`)
-        });
-        } else {
-              member.roles.add(ayar.roles.unregisterRoles).catch(e => {});
-             member.setNickname(ayar.guild.defaultName).catch(e => {});
-          inviterData.regular++;
-          inviterData.save().then(x => {
-          client.channels.cache.get(ayar.channels.registerChannel).send(`
-:tada: Sunucumuz'a hoş geldin ${member}!
-                
-Hesabın ${moment(member.user.createdTimestamp).locale('tr').format('LLL')} tarihinde (${moment.duration(Date.now() - member.user.createdTimestamp).locale('tr').format('Y [yıl], M [Ay], D [Gün]')}) önce oluşturulmuş.
-
-Sunucu kurallarımız ${client.channels.cache.get(ayar.channels.rulesChannel)} kanalında belirtilmiştir. Unutma sunucu içerisinde ki ceza işlemlerin kuralları okuduğunu varsayarak gerçekleştirilecek.
-
-${client.users.cache.has(inviter.id) ? inviter : "**Özel URL**"} tarafından davet edilerek Sunucumuzun ${member.guild.memberCount} üyesi olmanı sağladı! İyi eğlenceler :tada::tada::tada:`)
-        });
-        };
-      });
-  };
-  guildInvites.set(member.guild.id, newInvites);
+Sunucumuzun **${member.guild.memberCount}**. üyesi oldun! İyi eğlenceler :tada::tada::tada:`)
+        
+  }
 });
 
-client.on("guildMemberRemove", async member => {
-  let isMemberFake = (Date.now() - member.user.createdTimestamp) < 7*24*60*60*1000;
-  Database.findOne({ guildID: member.guild.id, userID: member.id }, async (err, memberData) => {
-    if (memberData && memberData.inviterID) {
-      let inviter = client.users.cache.get(memberData.inviterID) || {id: member.guild.id};
-      Database.findOne({ guildID: member.guild.id, userID: memberData.inviterID }, async (err, inviterData) => {
-        if (!inviterData) {
-         let newInviter = new Database({
-            _id: new mongoose.Types.ObjectId(),
-            guildID: member.guild.id,
-            userID: inviter.id,
-            inviterID: null,
-            regular: 0,
-            bonus: 0,
-            fake: 0
-          });
-          newInviter.save();
-        } else {
-          if (isMemberFake) {
-            if (inviterData.fake-1 >= 0) inviterData.fake--;
-          } else {
-            if (inviterData.regular-1 >= 0) inviterData.regular--;
-          };
-          inviterData.save().catch(x => {});
-        };
-      });
-    } else {
-    };
-  });
-});
