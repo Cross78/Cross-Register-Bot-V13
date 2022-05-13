@@ -1,5 +1,5 @@
 const Discord = require("discord.js")
-const client = new Discord.Client({ 'intents': [32767, "GUILD_INVITES"]});
+const client = new Discord.Client({ 'intents': [32767]});
 const ayar = require("./settings.js")
 const fs = require("fs");
 require('./util/Loader.js')(client);
